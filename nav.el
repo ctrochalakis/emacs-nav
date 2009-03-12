@@ -292,9 +292,20 @@ and delete files, etc."
 
 (defun nav-open-file-other-window-2 ()
   (interactive)
-  ;; TODO(issactrotts): Create another editing window if there is
-  ;; currently only one.
+  (if (= 2 (length (window-list)))
+      (progn
+        (other-window 1)
+        (split-window-horizontally)
+        (select-window (nav-get-window))))
   (nav-open-file-other-window 2))
+
+
+(defun nav-get-window ()
+  (let ((nav-win nil))
+    (dolist (w (window-list))
+      (if (string= "*nav*" (buffer-name (window-buffer w)))
+          (setq nav-win w)))
+    nav-win))
 
 
 (defun nav-refresh ()
