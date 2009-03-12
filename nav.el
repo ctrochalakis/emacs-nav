@@ -31,7 +31,9 @@
 ;;   p: Pop directory stack to go back to the directory where you just were
 ;;   q: Quit nav
 ;;   r: Refresh
-;;   s: Start a shell in the current directory
+;;   s: Start a shell in an emacs window in the current directory
+;;   t: Start a terminal in an emacs window in the current directory.
+;;      This allows programs like vi and less to be run.
 ;;   u: Go up to parent directory
 ;;   !: Run shell command
 ;;   [: Rotate non-nav windows counter clockwise
@@ -275,6 +277,7 @@ directory or is not accessible."
   "Invokes dired on the current directory so the user can rename
 and delete files, etc."
   (interactive)
+  (other-window 1)
   (dired (nav-get-working-dir)))
 
 
@@ -451,6 +454,17 @@ and delete files, etc."
   (shell nav-shell-buffer-name))
 
 
+(defun nav-term ()
+  "Starts up a term on the current nav directory, unless there is already a
+*terminal* buffer in which case it is reused."
+  (interactive)
+  (let ((dirname (file-truename ".")))
+    (other-window 1)
+    ;; HACK: Invoke dired on current directory so term will start there.
+    (dired dirname))
+  (term "/bin/bash"))
+
+
 (defun nav-get-other-windows ()
   (let* ((nav-window (get-buffer-window nav-buffer-name))
          (cur-window (next-window nav-window))
@@ -517,9 +531,10 @@ or counter-clockwise depending on the passed-in function next-i."
   (define-key bindings "m" 'nav-move-file)
   (define-key bindings "n" 'nav-make-new-directory)
   (define-key bindings "p" 'nav-pop-dir)
+  (define-key bindings "q" 'nav-quit)
   (define-key bindings "r" 'nav-refresh)
   (define-key bindings "s" 'nav-shell)
-  (define-key bindings "q" 'nav-quit)
+  (define-key bindings "t" 'nav-term)
   (define-key bindings "u" 'nav-go-up-one-dir)
   (define-key bindings "[" 'nav-rotate-windows-ccw)
   (define-key bindings "]" 'nav-rotate-windows-cw)
