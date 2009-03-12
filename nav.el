@@ -64,11 +64,23 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 
-(defvar nav-width 30
-  "How many columns to make the nav window.")
+
+(defgroup nav nil
+  "A bare-bones file/directory navigator."
+  :group 'applications)
+
+(defcustom nav-width 30
+  "*How many columns to make the nav window."
+  :type 'integer
+  :group 'nav)
+
+(defcustom nav-boring-file-regexps (list "\\.pyc$" "\\.o$" "~$" "\\.bak$" "^\\." "/\\.")
+  "*Nav ignores filenames that match any regular expression in this list."
+  :type '(repeat string)
+  :group 'nav)
+
 (defvar nav-dir-stack '())
-(defconst nav-boring-file-regexps '("\\.pyc$" "\\.o$" "~$" "\\.bak$" "^\\." "/\\.")
-  "Nav ignores filenames that match any regular expression in this list.")
+
 (defconst nav-shell-buffer-name "*nav-shell*"
   "Name of the buffer used for the command line shell spawned by nav on the 's' key.")
 (defconst nav-buffer-name "*nav*"
