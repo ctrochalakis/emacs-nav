@@ -48,8 +48,6 @@
 ;;   trees containing filenames with spaces.
 ;;
 ;; TODO:
-;; - Make nav-toggle operate based on whether there is a visible nav window,
-;;   not whether there is a *nav* buffer
 ;; - Optionally show a bit more depth of the directory tree.
 ;; - Toggle showing and hiding directory contents when user hits enter on them.
 ;;
@@ -358,7 +356,7 @@ and delete files, etc."
 
 (defun nav-toggle ()
   (interactive)
-  (if (get-buffer "*nav*")
+  (if (nav-get-window)
       (nav-quit)
     (nav)))
 
