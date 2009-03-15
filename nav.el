@@ -48,7 +48,8 @@
 ;;   trees containing filenames with spaces.
 ;;
 ;; TODO:
-;; - Expand the nav window when showing find results, or maybe show them outside of the nav window.
+;; - Make nav-toggle operate based on whether there is a visible nav window,
+;;   not whether there is a *nav* buffer
 ;; - Optionally show a bit more depth of the directory tree.
 ;; - Toggle showing and hiding directory contents when user hits enter on them.
 ;;
@@ -67,7 +68,7 @@
 
 
 (defgroup nav nil
-  "A bare-bones file/directory navigator."
+  "A lightweight file/directory navigator."
   :group 'applications)
 
 (defcustom nav-width 30
@@ -84,8 +85,12 @@
 
 (defconst nav-shell-buffer-name "*nav-shell*"
   "Name of the buffer used for the command line shell spawned by nav on the 's' key.")
+
 (defconst nav-buffer-name "*nav*"
   "Name of the buffer where nav shows directory contents.")
+
+(defconst nav-buffer-name-for-find-results "*nav-find*"
+  "Name of the buffer where nav shows results of its find command (f key).")
 
 
 (defmacro nav-assert (expression)
@@ -351,9 +356,6 @@ and delete files, etc."
   (kill-buffer nav-buffer-name))
 
 
-;; I recommend putting something like (global-set-key [f6]
-;; 'nav-toggle) in your .emacs.  That way you can quickly turn off nav                                                                                       
-;; when you want to do things like grep that don't work well with nav.                                                                                       
 (defun nav-toggle ()
   (interactive)
   (if (get-buffer "*nav*")
@@ -451,12 +453,17 @@ and delete files, etc."
           (nav-filter filenames (lambda (name) (string-match pattern name))))
          (names-matching-pattern
           (nav-append-slashes-to-dir-names names-matching-pattern)))
+    (pop-to-buffer nav-buffer-name-for-find-results nil)
     (if names-matching-pattern
+        (progn
+          (nav-replace-buffer-contents
+           (nav-join "\n" names-matching-pattern)
+           t)
+          ;; Enable nav keyboard shortcuts, mainly so hitting enter will open
+          ;; files.
+          (use-local-map nav-mode-map))
         (nav-replace-buffer-contents
-         (nav-join "\n" names-matching-pattern)
-         t)
-        (nav-replace-buffer-contents
-         "No matching files found.\nPress r to refresh."
+         "No matching files found."
          nil))))
 
 
