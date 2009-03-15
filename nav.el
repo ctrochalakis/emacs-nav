@@ -48,8 +48,9 @@
 ;;   trees containing filenames with spaces.
 ;;
 ;; TODO:
-;; - Optionally show a bit more depth of the directory tree
-;; - Toggle showing and hiding directory contents when user hits enter on them
+;; - Expand the nav window when showing find results, or maybe show them outside of the nav window.
+;; - Optionally show a bit more depth of the directory tree.
+;; - Toggle showing and hiding directory contents when user hits enter on them.
 ;;
 ;; LICENSE
 ;; Licensed under the Apache License, Version 2.0 (the "License");
@@ -237,13 +238,14 @@ directory or is not accessible."
           (setq line-num (+ line-num 1))))))
 
 
-(defun nav-replace-buffer-contents (new-contents)
+(defun nav-replace-buffer-contents (new-contents should-make-filenames-clickable)
   (let ((saved-line-number (nav-line-number-at-pos (point))))
     (setq buffer-read-only nil)
     (erase-buffer)
     (insert new-contents)
     (font-lock-fontify-buffer)
-    (nav-make-filenames-clickable)
+    (if should-make-filenames-clickable
+        (nav-make-filenames-clickable))
     (setq buffer-read-only t)
     (goto-line saved-line-number)))
 
@@ -269,7 +271,7 @@ directory or is not accessible."
                             ""))))
         (push line new-contents)))
     (let ((new-contents (nav-join "" (reverse new-contents))))
-      (nav-replace-buffer-contents new-contents))
+      (nav-replace-buffer-contents new-contents t))
     (setq mode-line-format (concat "nav: " (nav-dir-suffix (file-truename dir)) "/"))
     (force-mode-line-update)))
 
@@ -449,8 +451,13 @@ and delete files, etc."
           (nav-filter filenames (lambda (name) (string-match pattern name))))
          (names-matching-pattern
           (nav-append-slashes-to-dir-names names-matching-pattern)))
-    (nav-replace-buffer-contents
-     (nav-join "\n" names-matching-pattern))))
+    (if names-matching-pattern
+        (nav-replace-buffer-contents
+         (nav-join "\n" names-matching-pattern)
+         t)
+        (nav-replace-buffer-contents
+         "No matching files found.\nPress r to refresh."
+         nil))))
 
 
 (defun nav-make-new-directory (name)
