@@ -92,11 +92,6 @@
   "Name of the buffer where nav shows results of its find command (f key).")
 
 
-(defmacro nav-assert (expression)
-  `(if (not ,expression)
-       (throw 'nav-assertion-failed ',expression)))
-
-
 (defun nav-filter (ls pred)
   "Returns a new list containing all elements that satisfy the given predicate."
   (let ((result '()))
@@ -105,20 +100,9 @@
           (push x result)))
     (reverse result)))
 
-(progn
-  (nav-assert (equal '() (nav-filter '() 'stringp)))
-  (nav-assert (equal '("a" "b") (nav-filter '("a" "b") 'stringp)))
-  (nav-assert (equal '() (nav-filter '(1) 'stringp))))
-
 
 (defun nav-join (sep string-list)
   (mapconcat 'identity string-list sep))
-
-(progn
-  (nav-assert (string= "" (nav-join "" '())))
-  (nav-assert (string= "" (nav-join "--" '())))
-  (nav-assert (string= "a" (nav-join "--" '("a"))))
-  (nav-assert (string= "aye--bee" (nav-join "--" '("aye" "bee")))))
 
 
 (defun nav-filter-out-boring-filenames (filenames boring-regexps)
@@ -131,11 +115,6 @@
         (if (not filename-is-boring)
             (push filename result))))
     (reverse result)))
-
-(progn
-  (nav-assert (equal '() (nav-filter-out-boring-filenames '() '())))
-  (nav-assert (equal '("a" "b.foo") (nav-filter-out-boring-filenames '("a" "b.foo") '())))
-  (nav-assert (equal '("a") (nav-filter-out-boring-filenames '("a" "b.foo") '("\\.foo$")))))
 
 
 (defun nav-make-pipe-filter-against-boring-files ()
@@ -165,12 +144,6 @@ directory or is not accessible."
   (condition-case err
       (directory-files dirname)
     (file-error nil)))
-
-(progn
-  (nav-assert (eq nil (nav-dir-files-or-nil "$")))
-  (nav-assert (nav-dir-files-or-nil "."))
-  (nav-assert (nav-dir-files-or-nil ".."))
-  (nav-assert (nav-dir-files-or-nil "/")))
 
 
 ;; Changes to a different directory and pushes it onto the stack.
@@ -228,12 +201,6 @@ directory or is not accessible."
 (defun nav-dir-suffix (dir)
   (replace-regexp-in-string ".*/" "" (directory-file-name dir)))
 
-(progn
-  (nav-assert (string= "qux" (nav-dir-suffix "/qux/")))
-  (nav-assert (string= "qux" (nav-dir-suffix "qux/")))
-  (nav-assert (string= "bar" (nav-dir-suffix "/foo/bar/")))
-  (nav-assert (string= "bar" (nav-dir-suffix "/foo/bar"))))
-
 
 (defun nav-line-number-at-pos (p)
   (let ((line-num 1))
@@ -264,7 +231,8 @@ directory or is not accessible."
             (make-button start end
                          'action (lambda (button)
                                    (nav-open-file (button-label button)))
-                         'follow-link t))))
+                         'follow-link t
+                         'help-echo ""))))
     (error 
      ;; This can happen for versions of emacs that don't have
      ;; make-button defined.
@@ -290,6 +258,13 @@ directory or is not accessible."
     (shrink-window-horizontally (- (window-width) n)))
   (if (< (window-width) n)
     (enlarge-window-horizontally (- n (window-width)))))
+
+
+(defun nav-set-window-height (n)
+  (if (> (window-height) n)
+    (shrink-window (- (window-height) n)))
+  (if (< (window-height) n)
+    (enlarge-window (- n (window-height)))))
 
 
 (defun nav-get-working-dir ()
@@ -439,11 +414,6 @@ and delete files, etc."
   (if (not filenames)
       ""
     (format "grep -il '%s' %s" pattern (nav-join " " filenames))))
-
-(progn
-  (nav-assert (string= "" (nav-make-grep-list-cmd "pat" '())))
-  (nav-assert (string= "grep -il 'pat' file1 file2"
-                       (nav-make-grep-list-cmd "pat" '("file1" "file2")))))
 
 
 (defun nav-append-slashes-to-dir-names (names)
