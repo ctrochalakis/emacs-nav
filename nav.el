@@ -255,15 +255,20 @@ directory or is not accessible."
 
 
 (defun nav-make-filenames-clickable ()
-  (dotimes (i (count-lines 1 (point-max)))
-    (let ((line-num (+ i 1)))
-      (goto-line line-num)
-      (let ((start (line-beginning-position))
-            (end (line-end-position)))
-        (make-button start end
-                     'action (lambda (button)
-                               (nav-open-file (button-label button)))
-                     'follow-link t)))))
+  (condition-case err
+      (dotimes (i (count-lines 1 (point-max)))
+        (let ((line-num (+ i 1)))
+          (goto-line line-num)
+          (let ((start (line-beginning-position))
+                (end (line-end-position)))
+            (make-button start end
+                         'action (lambda (button)
+                                   (nav-open-file (button-label button)))
+                         'follow-link t))))
+    (error 
+     ;; This can happen for versions of emacs that don't have
+     ;; make-button defined.
+     'failed)))
 
 
 (defun nav-show-dir (dir)
@@ -458,16 +463,19 @@ and delete files, etc."
           (nav-append-slashes-to-dir-names names-matching-pattern)))
     (pop-to-buffer nav-buffer-name-for-find-results nil)
     (if names-matching-pattern
-        (progn
-          (nav-replace-buffer-contents
-           (nav-join "\n" names-matching-pattern)
-           t)
-          ;; Enable nav keyboard shortcuts, mainly so hitting enter will open
-          ;; files.
-          (use-local-map nav-mode-map))
+        (nav-show-find-results names-matching-pattern)
         (nav-replace-buffer-contents
          "No matching files found."
          nil))))
+
+
+(defun nav-show-find-results (paths)
+  (nav-replace-buffer-contents
+   (nav-join "\n" names-matching-pattern)
+   t)
+  ;; Enable nav keyboard shortcuts, mainly so hitting enter will open
+  ;; files.
+  (use-local-map nav-mode-map))
 
 
 (defun nav-make-new-directory (name)
