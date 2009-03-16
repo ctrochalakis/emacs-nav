@@ -48,6 +48,7 @@
 ;;   trees containing filenames with spaces.
 ;;
 ;; TODO:
+;; - Add automated tests of system calls.
 ;; - Optionally show a bit more depth of the directory tree.
 ;; - Toggle showing and hiding directory contents when user hits enter on them.
 ;;
@@ -376,13 +377,24 @@ and delete files, etc."
   (nav-push-dir dirname))
 
 
+(defun nav-this-is-a-microsoft-os ()
+  (or (string= system-type "windows-nt")
+      (string= system-type "ms-dos")))
+
+
+(defun nav-make-remove-dir-command (dirname)
+  (if (nav-this-is-a-microsoft-os)
+      (format "rmdir /S /Q \"%s\"" dirname)
+    (format "rm -rf '%s'" dirname)))
+
+
 (defun nav-delete-file-or-dir ()
   (interactive)
   (let ((filename (get-cur-line-str)))
     (if (file-directory-p filename)
         (if (yes-or-no-p (format "Really delete directory %s ?" filename))
             (progn
-              (shell-command (concat "rm -rf " (nav-quote filename)))
+	      (shell-command (nav-make-remove-dir-command filename))
               (nav-refresh)))
       (if (y-or-n-p (format "Really delete file %s ? " filename))
           (progn
@@ -397,32 +409,25 @@ and delete files, etc."
       (y-or-n-p (format "Really overwrite %s ? " target-name))))
 
 
-(defun nav-quote (filename)
-  (concat "'" filename "'"))
-
-
-(progn
-  (nav-assert (string= "''" (nav-quote "")))
-  (nav-assert (string= "'a'" (nav-quote "a"))))
-
-
 (defun nav-copy-file-or-dir (target-name)
   (interactive "sCopy to: ")
-  (if (nav-ok-to-overwrite target-name)
-      (let* ((filename (get-cur-line-str))
-             (maybe-dash-r (if (file-directory-p filename) "-r" "")))
-        (shell-command (format "cp %s %s %s" maybe-dash-r 
-                               (nav-quote filename)
-                               (nav-quote target-name)))
-        (nav-refresh))))
+  (let ((filename (get-cur-line-str)))
+    (if (nav-this-is-a-microsoft-os)
+	(copy-file filename target-name)
+      (if (nav-ok-to-overwrite target-name)
+	  (let ((maybe-dash-r (if (file-directory-p filename) "-r" "")))
+	    (shell-command (format "cp %s '%s' '%s'" maybe-dash-r filename target-name))))))
+  (nav-refresh))
 
 
 (defun nav-move-file (new-name)
   (interactive "sNew name or directory: ")
-  (if (nav-ok-to-overwrite new-name)
-      (let ((old-name (get-cur-line-str)))
-        (shell-command (format "mv %s %s" old-name new-name))
-        (nav-refresh))))
+  (let ((old-name (get-cur-line-str)))
+    (if (nav-this-is-a-microsoft-os)
+	(rename-file old-name new-name)
+      (if (nav-ok-to-overwrite new-name)
+	  (shell-command (format "mv %s %s" old-name new-name)))))
+  (nav-refresh))
 
 
 (defun nav-make-grep-list-cmd (pattern filenames)
@@ -466,8 +471,8 @@ and delete files, etc."
 
 
 (defun nav-make-new-directory (name)
-  (interactive "sMake new directory: ")
-  (shell-command (concat "mkdir " (nav-quote name)))
+  (interactive "sMake directory: ")
+  (make-directory name)
   (nav-refresh))
 
 
@@ -484,7 +489,9 @@ and delete files, etc."
   (interactive)
   (let ((dirname (file-truename ".")))
     (other-window 1)
-    ;; HACK: Invoke dired on current directory so term will start there.
+    ;; Invoke dired on current directory so term will start there.
+    ;; TODO(issactrotts): Do something other than this hack, to prevent
+    ;; cluttering up with a dired buffer.
     (dired dirname))
   (term "/bin/bash"))
 
