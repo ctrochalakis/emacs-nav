@@ -519,9 +519,9 @@ or counter-clockwise depending on the passed-in function next-i."
             (let ((file-path (format "%s%s" dir-path file-name)))
               (if (file-directory-p file-path)
                   (let ((more-paths (nav-get-paths (format "%s/" file-path))))
-                    (setq paths (append paths more-paths)))
-                (setq paths (append paths (list file-path))))))))
-    paths))
+                    (setq paths (append (reverse more-paths) paths)))
+                (push file-path paths))))))
+    (reverse paths)))
 
 
 (defun nav-set-up-highlighting ()
