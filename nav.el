@@ -509,6 +509,21 @@ or counter-clockwise depending on the passed-in function next-i."
                          (buffer-name (aref buf-vec i))))))
 
 
+(defun nav-get-paths (dir-path)
+  "Recursively finds all paths starting with a given directory name."
+  (let ((paths (list dir-path)))
+    (dolist (file-name (directory-files dir-path))
+      (if (not (or (string= "." file-name)
+                   (string= ".." file-name)))
+          (progn
+            (let ((file-path (format "%s%s" dir-path file-name)))
+              (if (file-directory-p file-path)
+                  (let ((more-paths (nav-get-paths (format "%s/" file-path))))
+                    (setq paths (append paths more-paths)))
+                (setq paths (append paths (list file-path))))))))
+    paths))
+
+
 (defun nav-set-up-highlighting ()
   (turn-on-font-lock)
   (font-lock-add-keywords 'nav-mode '(("^.*/$" . font-lock-type-face))))
