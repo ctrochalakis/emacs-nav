@@ -529,12 +529,17 @@ or counter-clockwise depending on the passed-in function next-i."
   (font-lock-add-keywords 'nav-mode '(("^.*/$" . font-lock-type-face))))
 
 
+(defun nav-shell-command (command)
+  (interactive "sShell command: ")
+  (shell-command command)
+  (nav-refresh))
+
+
 (define-derived-mode nav-mode fundamental-mode 
   "Nav-mode is for IDE-like navigation of directories.
 
  It's more IDEish than dired, not as heavy weight as speedbar."
   (nav-set-window-width nav-width)
-  (setq major-mode 'nav-mode)
   (setq mode-name "Navigation")
   (use-local-map nav-mode-map)
   (nav-set-up-highlighting)
@@ -562,7 +567,7 @@ or counter-clockwise depending on the passed-in function next-i."
   (define-key bindings "u" 'nav-go-up-one-dir)
   (define-key bindings "[" 'nav-rotate-windows-ccw)
   (define-key bindings "]" 'nav-rotate-windows-cw)
-  (define-key bindings "!" 'shell-command)
+  (define-key bindings "!" 'nav-shell-command)
   (define-key bindings ":" 'nav-turn-off-keys-and-be-writable)
   (define-key bindings "\C-x\C-f" 'find-file-other-window))
 
