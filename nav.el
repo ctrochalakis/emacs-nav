@@ -486,7 +486,8 @@ and delete files, etc."
          (cur-window (next-window nav-window))
          (result '()))
     (while (not (eq cur-window nav-window))
-      (push cur-window result)
+      (if (not (window-minibuffer-p cur-window))
+          (push cur-window result))
       (setq cur-window (next-window cur-window)))
     (reverse result)))
 
