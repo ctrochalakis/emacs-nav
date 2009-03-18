@@ -71,13 +71,20 @@
   :group 'applications)
 
 (defcustom nav-width 30
-  "*How many columns to make the nav window."
+  "*Initial width of the Nav window."
   :type 'integer
   :group 'nav)
 
 (defcustom nav-boring-file-regexps (list "\\.pyc$" "\\.o$" "~$" "\\.bak$" "^\\." "/\\.")
   "*Nav ignores filenames that match any regular expression in this list."
   :type '(repeat string)
+  :group 'nav)
+
+(defcustom nav-split-window-direction 'horizontal
+  "*Window split direction for `nav-open-file-other-window-2'.
+
+This is used if only one window besides the Nav window is visible."
+  :type '(choice (const horizontal) (const vertical))
   :group 'nav)
 
 (defvar nav-dir-stack '())
@@ -292,11 +299,12 @@ and delete files, etc."
 
 (defun nav-open-file-other-window-2 ()
   (interactive)
-  (if (= 2 (length (window-list)))
-      (progn
-        (other-window 1)
+  (when (= 2 (length (window-list)))
+    (other-window 1)
+    (if (eql nav-split-window-direction 'horizontal)
         (split-window-horizontally)
-        (select-window (nav-get-window))))
+      (split-window-vertically))
+    (select-window (nav-get-window)))
   (nav-open-file-other-window 2))
 
 
