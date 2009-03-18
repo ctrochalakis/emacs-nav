@@ -150,8 +150,7 @@ directory or is not accessible."
 (defun nav-cd (dirname)
   (let ((dirname (file-name-as-directory (file-truename dirname))))
     (setq default-directory dirname)
-    (nav-show-dir dirname)
-    (nav-assert (nav-dir-files-or-nil default-directory))))
+    (nav-show-dir dirname)))
 
 
 (defun nav-open-file (filename)
