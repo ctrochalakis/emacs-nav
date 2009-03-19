@@ -3,9 +3,11 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com
+;; Version 23
 ;;
 
 ;;; License:
+;;
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
 ;; You may obtain a copy of the License at
@@ -32,34 +34,36 @@
 ;; will be closed to make sure the nav window shows up correctly.
 
 ;;; Key Bindings
-;;   Enter/Return: Open file or directory under cursor
 ;;
-;;   1: Open file under cursor in 1st other window
-;;   2: Open file under cursor in 2nd other window
+;;   Enter/Return: Open file or directory under cursor.
 ;;
-;;   c: Copy file or directory under cursor
-;;   d: Delete file or directory under cursor (asks to confirm first)
-;;   e: Edit current directory in dired
-;;   f: Recursively find files whose names or contents match some regexp
-;;   g: Recursively grep for some regexp
-;;   j: Jump to another directory
-;;   m: Move or rename file or directory
-;;   n: Make new directory
-;;   p: Pop directory stack to go back to the directory where you just were
-;;   q: Quit nav
-;;   r: Refresh
-;;   s: Start a shell in an emacs window in the current directory
+;;   1: Open file under cursor in 1st other window.
+;;   2: Open file under cursor in 2nd other window.
+;;
+;;   c: Copy file or directory under cursor.
+;;   d: Delete file or directory under cursor (asks to confirm first).
+;;   e: Edit current directory in dired.
+;;   f: Recursively find files whose names or contents match some regexp.
+;;   g: Recursively grep for some regexp.
+;;   j: Jump to another directory.
+;;   m: Move or rename file or directory.
+;;   n: Make new directory.
+;;   p: Pop directory stack to go back to the directory where you just were.
+;;   q: Quit nav.
+;;   r: Refresh.
+;;   s: Start a shell in an emacs window in the current directory.
 ;;   t: Start a terminal in an emacs window in the current directory.
-;;      This allows programs like vi and less to run
-;;   u: Go up to parent directory
-;;   !: Run shell command
-;;   [: Rotate non-nav windows counter clockwise
-;;   ]: Rotate non-nav windows clockwise
+;;      This allows programs like vi and less to run. Exit with C-d C-d.
+;;   u: Go up to parent directory.
+;;   !: Run shell command.
+;;   [: Rotate non-nav windows counter clockwise.
+;;   ]: Rotate non-nav windows clockwise.
 ;;
-;;   :: Go into debug mode (should only be needed if you are hacking nav.el)
+;;   :: Go into debug mode (should only be needed if you are hacking nav.el).
 ;;
 
 ;;; History:
+;;
 ;; See http://code.google.com/p/emacs-nav/source/list
 ;;
 
@@ -94,6 +98,38 @@ This is used if only one window besides the Nav window is visible."
   :type 'boolean
   :group 'nav)
 
+
+(defun nav-make-mode-map ()
+  "Creates and returns a mode map with nav's key bindings."
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap [enter] 'nav-open-file-under-cursor)
+    (define-key keymap [return] 'nav-open-file-under-cursor) ; for Macs
+    (define-key keymap "1" 'nav-open-file-other-window-1)
+    (define-key keymap "2" 'nav-open-file-other-window-2)
+    (define-key keymap "c" 'nav-copy-file-or-dir)
+    (define-key keymap "d" 'nav-delete-file-or-dir)
+    (define-key keymap "e" 'nav-invoke-dired)
+    (define-key keymap "f" 'nav-find-files)
+    (define-key keymap "g" 'nav-recursive-grep)
+    (define-key keymap "j" 'nav-jump-to-dir)
+    (define-key keymap "m" 'nav-move-file)
+    (define-key keymap "n" 'nav-make-new-directory)
+    (define-key keymap "p" 'nav-pop-dir)
+    (define-key keymap "q" 'nav-quit)
+    (define-key keymap "r" 'nav-refresh)
+    (define-key keymap "s" 'nav-shell)
+    (define-key keymap "t" 'nav-term)
+    (define-key keymap "u" 'nav-go-up-one-dir)
+    (define-key keymap "[" 'nav-rotate-windows-ccw)
+    (define-key keymap "]" 'nav-rotate-windows-cw)
+    (define-key keymap "!" 'nav-shell-command)
+    (define-key keymap ":" 'nav-turn-off-keys-and-be-writable)
+    (define-key keymap [(control ?x) (control ?f)] 'find-file-other-window)
+    keymap))
+
+
+(defvar nav-mode-map (nav-make-mode-map))
+
 (defvar nav-dir-stack '())
 
 (defconst nav-shell-buffer-name "*nav-shell*"
@@ -104,7 +140,7 @@ This is used if only one window besides the Nav window is visible."
   "Name of the buffer where nav shows directory contents.")
 
 (defconst nav-buffer-name-for-find-results "*nav-find*"
-  "Name of the buffer where nav shows results of its find command (f key).")
+  "Name of the buffer where nav shows results of its find command ('f' key).")
 
 
 (defun nav-join (sep string-list)
@@ -171,17 +207,13 @@ directory or is not accessible."
 
 
 (defun nav-push-dir (dirname)
-  (push (file-truename dirname) nav-dir-stack)
+  (push (file-truename default-directory) nav-dir-stack)
   (nav-cd dirname))
 
 
 (defun nav-pop-dir ()
   (interactive)
-  (let ((dir (if (> (length nav-dir-stack) 1)
-                 (progn
-                   (pop nav-dir-stack)
-                   (car nav-dir-stack))
-               ".")))
+  (let ((dir (or (pop nav-dir-stack) ".")))
     (nav-cd dir)))
 
 
@@ -219,16 +251,17 @@ directory or is not accessible."
 
 (defun nav-make-filenames-clickable ()
   (condition-case err
-      (dotimes (i (count-lines 1 (point-max)))
-        (let ((line-num (+ i 1)))
-          (goto-line line-num)
+      (save-excursion
+        (goto-line 1)
+        (dotimes (i (count-lines 1 (point-max)))
           (let ((start (line-beginning-position))
                 (end (line-end-position)))
             (make-button start end
                          'action (lambda (button)
                                    (nav-open-file (button-label button)))
                          'follow-link t
-                         'help-echo ""))))
+                         'help-echo ""))
+          (forward-line 1)))
     (error 
      ;; This can happen for versions of emacs that don't have
      ;; make-button defined.
@@ -293,7 +326,7 @@ and delete files, etc."
   (interactive)
   (when (= 2 (length (window-list)))
     (other-window 1)
-    (if (eql nav-split-window-direction 'horizontal)
+    (if (eq nav-split-window-direction 'horizontal)
         (split-window-horizontally)
       (split-window-vertically))
     (select-window (nav-get-window nav-buffer-name)))
@@ -309,11 +342,11 @@ and delete files, etc."
     nav-win))
 
 
-(defun nav-window-width ()
+(defun nav-outer-width ()
   (let* ((edges (window-edges (nav-get-window nav-buffer-name)))
          (left (nth 0 edges))
          (right (nth 2 edges)))
-    (- right left 1)))
+    (- right left)))
 
 
 (defun nav-refresh ()
@@ -340,7 +373,7 @@ and delete files, etc."
     (when window
       (when nav-resize-frame-p
         (set-frame-width (selected-frame) 
-                         (- (frame-width) (nav-window-width))))
+                         (- (frame-width) (nav-outer-width))))
       (delete-window window)))
   (kill-buffer nav-buffer-name))
 
@@ -536,20 +569,14 @@ or counter-clockwise depending on the passed-in function next-i."
   (let* ((dir-path (file-name-as-directory dir-path))
          (paths (list dir-path)))
     (dolist (file-name (directory-files dir-path))
-      (if (not (or (string= "." file-name)
+      (when (not (or (string= "." file-name)
                    (string= ".." file-name)))
-          (progn
             (let ((file-path (format "%s%s" dir-path file-name)))
               (if (file-directory-p file-path)
                   (let ((more-paths (nav-get-paths (format "%s/" file-path))))
                     (setq paths (append (reverse more-paths) paths)))
-                (push file-path paths))))))
+                (push file-path paths)))))
     (reverse paths)))
-
-
-(defun nav-set-up-highlighting ()
-  (turn-on-font-lock)
-  (font-lock-add-keywords 'nav-mode '(("^.*/$" . font-lock-type-face))))
 
 
 (defun nav-shell-command (command)
@@ -561,7 +588,7 @@ or counter-clockwise depending on the passed-in function next-i."
 (defun nav-resize-frame ()
   "Widens the frame to fit Nav without shrinking the editing space."
   (set-frame-width (selected-frame) 
-                   (+ (frame-width) (nav-window-width)))
+                   (+ (frame-width) (nav-outer-width)))
   ;; set-frame-width resizes the nav window; set it back
   (nav-set-window-width nav-width))
 
@@ -572,38 +599,14 @@ or counter-clockwise depending on the passed-in function next-i."
  It's more IDEish than dired, not as heavy weight as speedbar."
   (nav-set-window-width nav-width)
   (setq mode-name "Navigation")
-  (nav-set-key-bindings nav-mode-map)
   (use-local-map nav-mode-map)
-  (nav-set-up-highlighting)
+  (turn-on-font-lock)
+  (font-lock-add-keywords 'nav-mode '(("^.*/$" . font-lock-type-face)))
   (nav-refresh))  
 
 
-(defun nav-set-key-bindings (bindings)
-  (define-key bindings "\n" 'nav-open-file-under-cursor) ; enter key
-  (define-key bindings "\r" 'nav-open-file-under-cursor) ; return key for Macs
-  (define-key bindings "1" 'nav-open-file-other-window-1)
-  (define-key bindings "2" 'nav-open-file-other-window-2)
-  (define-key bindings "c" 'nav-copy-file-or-dir)
-  (define-key bindings "d" 'nav-delete-file-or-dir)
-  (define-key bindings "e" 'nav-invoke-dired)
-  (define-key bindings "f" 'nav-find-files)
-  (define-key bindings "g" 'nav-recursive-grep)
-  (define-key bindings "j" 'nav-jump-to-dir)
-  (define-key bindings "m" 'nav-move-file)
-  (define-key bindings "n" 'nav-make-new-directory)
-  (define-key bindings "p" 'nav-pop-dir)
-  (define-key bindings "q" 'nav-quit)
-  (define-key bindings "r" 'nav-refresh)
-  (define-key bindings "s" 'nav-shell)
-  (define-key bindings "t" 'nav-term)
-  (define-key bindings "u" 'nav-go-up-one-dir)
-  (define-key bindings "[" 'nav-rotate-windows-ccw)
-  (define-key bindings "]" 'nav-rotate-windows-cw)
-  (define-key bindings "!" 'nav-shell-command)
-  (define-key bindings ":" 'nav-turn-off-keys-and-be-writable)
-  (define-key bindings "\C-x\C-f" 'find-file-other-window))
-
-
+;; For ELPA, the Emacs Lisp Package Archive
+;;;###autoload
 (defun nav ()
   "Run nav-mode in a narrow window on the left side."
   (interactive)
@@ -617,8 +620,6 @@ or counter-clockwise depending on the passed-in function next-i."
   (when nav-resize-frame-p
     (nav-resize-frame)))
 
-
-(provide 'nav)
 
 (provide 'nav)
 

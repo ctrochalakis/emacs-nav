@@ -79,11 +79,11 @@
 
 ;;; Tests involving some file IO.
 
-(nav-deftest "nav-window-width"
+(nav-deftest "nav-outer-width"
              (nav)
-             (nav-assert (= nav-width (nav-window-width)))
+             (nav-assert (> (nav-outer-width) nav-width))
              (nav-set-window-width 45)
-             (nav-assert (= 45 (nav-window-width)))
+             (nav-assert (> (nav-outer-width) 45))
              (nav-quit))
 
 
@@ -153,14 +153,8 @@
 
 
 (defun tear-down ()
-  (delete-file "d1/a")
-  (delete-file "d1/b")
-  (delete-file "d1/b.bak")
-  (delete-file "d1/d12/c")
-  (delete-directory "d1/d11/")
-  (delete-directory "d1/d12/")
-  (delete-directory "d1/")
-  (delete-directory "emptydir/"))
+  (dolist (dir '("d1" "emptydir"))
+    (shell-command (nav-make-remove-dir-command dir))))
 
 
 (defun nav-run-tests ()
