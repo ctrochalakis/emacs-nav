@@ -79,6 +79,16 @@
 
 ;;; Tests involving some file IO.
 
+(nav-deftest "nav-get-working-dir"
+             (nav)
+             (let ((dir1 (nav-get-working-dir)))
+               (nav-push-dir "..")
+               (nav-assert (not (string= dir1 (nav-get-working-dir))))
+               (nav-pop-dir)
+               (nav-assert (string= dir1 (nav-get-working-dir))))
+             (nav-quit))
+
+
 (defun make-test-file (filename contents)
   (let ((prev-file (buffer-file-name)))
     (find-file filename)

@@ -191,7 +191,6 @@ directory or is not accessible."
                    (pop nav-dir-stack)
                    (car nav-dir-stack))
                ".")))
-    (message "Changing to %s\n" dir)
     (nav-cd dir)))
 
 
@@ -274,7 +273,9 @@ directory or is not accessible."
 
 
 (defun nav-get-working-dir ()
-  (file-name-as-directory (file-truename default-directory)))
+  (save-current-buffer
+    (set-buffer nav-buffer-name)
+    (file-name-as-directory (file-truename default-directory))))
 
 
 (defun nav-invoke-dired ()
