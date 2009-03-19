@@ -33,7 +33,7 @@
 ;;   r: Refresh
 ;;   s: Start a shell in an emacs window in the current directory
 ;;   t: Start a terminal in an emacs window in the current directory.
-;;      This allows programs like vi and less to be run.
+;;      This allows programs like vi and less to run
 ;;   u: Go up to parent directory
 ;;   !: Run shell command
 ;;   [: Rotate non-nav windows counter clockwise
@@ -46,11 +46,6 @@
 ;;   the stack, leading to confusion.
 ;; - Running the 'g' and 'f' commands doesn't work well in directory
 ;;   trees containing filenames with spaces.
-;;
-;; TODO:
-;; - Add automated tests of system calls.
-;; - Optionally show a bit more depth of the directory tree.
-;; - Toggle showing and hiding directory contents when user hits enter on them.
 ;;
 ;; LICENSE
 ;; Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,7 +83,7 @@ This is used if only one window besides the Nav window is visible."
   :group 'nav)
 
 (defcustom nav-resize-frame-p nil
-  "If true, activating and deactivating nav will resize the current frame."
+  "*If true, activating and deactivating nav will resize the current frame."
   :type 'boolean
   :group 'nav)
 
@@ -360,6 +355,8 @@ and delete files, etc."
 
 
 (defun nav-toggle ()
+  "Toggles whether Nav is active. It is useful to bind a key such
+as f6 to this function."
   (interactive)
   (if (nav-get-window nav-buffer-name)
       (nav-quit)
@@ -367,7 +364,8 @@ and delete files, etc."
 
 
 (defun nav-make-recursive-grep-command (pattern)
-  (concat (nav-make-non-boring-find-command) " | xargs grep -inH '" pattern "'"))
+  (concat (nav-make-non-boring-find-command) " | xargs grep -inH '" pattern
+          "'"))
 
 
 (defun nav-recursive-grep (pattern)
@@ -407,7 +405,8 @@ and delete files, etc."
 
 
 (defun nav-ok-to-overwrite (target-name)
-  "Returns true if the target doesn't exist, is a directory, or if the user says it's ok."
+  "Returns true if the target doesn't exist, is a directory, or
+if the user says it's ok."
   (or (not (file-exists-p target-name))
       (file-directory-p target-name)
       (y-or-n-p (format "Really overwrite %s ? " target-name))))
@@ -420,7 +419,8 @@ and delete files, etc."
 	(copy-file filename target-name)
       (if (nav-ok-to-overwrite target-name)
 	  (let ((maybe-dash-r (if (file-directory-p filename) "-r" "")))
-	    (shell-command (format "cp %s '%s' '%s'" maybe-dash-r filename target-name))))))
+	    (shell-command (format "cp %s '%s' '%s'" maybe-dash-r filename
+                                   target-name))))))
   (nav-refresh))
 
 
@@ -489,16 +489,15 @@ and delete files, etc."
   "Starts up a term on the current nav directory, unless there is already a
 *terminal* buffer in which case it is reused."
   (interactive)
-  (let ((dirname (file-truename ".")))
-    (other-window 1)
-    ;; Invoke dired on current directory so term will start there.
-    ;; TODO(issactrotts): Do something other than this hack, to prevent
-    ;; cluttering up with a dired buffer.
-    (dired dirname))
-  (term "/bin/bash"))
+  (let ((nav-temp-file "*nav-temp*"))
+    (find-file-other-window nav-temp-file)
+    (setq default-directory (nav-get-working-dir))
+    (term "/bin/bash")
+    (kill-buffer nav-temp-file)))
 
 
 (defun nav-get-other-windows ()
+  "Returns a list of windows other than the Nav window."
   (let* ((nav-window (get-buffer-window nav-buffer-name))
          (cur-window (next-window nav-window))
          (result '()))
@@ -574,6 +573,7 @@ or counter-clockwise depending on the passed-in function next-i."
  It's more IDEish than dired, not as heavy weight as speedbar."
   (nav-set-window-width nav-width)
   (setq mode-name "Navigation")
+  (nav-set-key-bindings nav-mode-map)
   (use-local-map nav-mode-map)
   (nav-set-up-highlighting)
   (nav-refresh))  
@@ -603,8 +603,6 @@ or counter-clockwise depending on the passed-in function next-i."
   (define-key bindings "!" 'nav-shell-command)
   (define-key bindings ":" 'nav-turn-off-keys-and-be-writable)
   (define-key bindings "\C-x\C-f" 'find-file-other-window))
-
-(nav-set-key-bindings nav-mode-map)
 
 
 (defun nav ()
