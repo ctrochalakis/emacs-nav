@@ -111,11 +111,13 @@
   (make-directory "emptydir/" t)
   (make-test-file "d1/a" "things in a")
   (make-test-file "d1/b" "a little bee")
+  (make-test-file "d1/b.bak" "a little bee")
   (make-test-file "d1/d12/c" "let me see"))
 
 
+(set-up)
 (nav-deftest "getting all paths in an empty directory tree"
-             (let ((found-paths (nav-get-paths "emptydir/"))
+             (let ((found-paths (nav-get-paths "emptydir"))
                    (expected (list "emptydir/")))
                (nav-assert (equal expected found-paths))))
 
@@ -125,15 +127,35 @@
                    (expected '("d1/"
                                "d1/a"
                                "d1/b"
+                               "d1/b.bak"
                                "d1/d11/"
                                "d1/d12/"
                                "d1/d12/c")))
                (nav-assert (equal expected found-paths))))
 
 
+(nav-deftest "getting non-boring filenames, empty case"
+             (let ((found-paths (nav-get-non-boring-filenames-recursively "emptydir")))
+               (nav-assert (equal '() found-paths))))
+
+
+(nav-deftest "getting non-boring filenames"
+             (let ((found-paths (nav-get-non-boring-filenames-recursively "d1"))
+                   (expected '("d1/a"
+                               "d1/b"
+                               "d1/d12/c")))
+               (nav-assert (equal expected found-paths))))
+
+
+(nav-deftest "nav-get-non-boring-filenames-recursively doesn't return nil when given ."
+             (let ((n (length (nav-get-non-boring-filenames-recursively "."))))
+               (nav-assert (> n 0))))
+
+
 (defun tear-down ()
   (delete-file "d1/a")
   (delete-file "d1/b")
+  (delete-file "d1/b.bak")
   (delete-file "d1/d12/c")
   (delete-directory "d1/d11/")
   (delete-directory "d1/d12/")

@@ -77,7 +77,7 @@
   :group 'nav)
 
 (defcustom nav-boring-file-regexps
-  (list "\\.pyc$" "\\.o$" "~$" "\\.bak$" "^\\." "/\\.")
+  (list "\\.pyc$" "\\.o$" "~$" "\\.bak$" "^\\.[^/]" "^\\./?$" "/\\.")
   "*Nav ignores filenames that match any regular expression in this list."
   :type '(repeat string)
   :group 'nav)
@@ -125,20 +125,9 @@ This is used if only one window besides the Nav window is visible."
     (remove-if 'is-boring filenames)))
 
 
-(defun nav-make-pipe-filter-against-boring-files ()
-  (mapconcat (lambda (rx) (concat "grep -v \"" rx "\""))
-             nav-boring-file-regexps " | "))
-
-
-(defun nav-make-non-boring-find-command ()
-  ;; The sed command strips away ./ prefixes.
-  (concat "find . -name \\* | sed 's/^.\\///' | "
-          (nav-make-pipe-filter-against-boring-files)))
-
-
-(defun nav-get-non-boring-filenames-recursively ()
-  (let ((command (nav-make-non-boring-find-command)))
-    (split-string (shell-command-to-string command))))
+(defun nav-get-non-boring-filenames-recursively (dirname)
+  (let ((paths (nav-get-paths dirname)))
+    (nav-filter-out-boring-filenames paths (cons "/$" nav-boring-file-regexps))))
 
 
 (defun nav-kill-buffer-if-exists (bufname)
@@ -366,8 +355,15 @@ as f6 to this function."
 
 
 (defun nav-make-recursive-grep-command (pattern)
-  (concat (nav-make-non-boring-find-command) " | xargs grep -inH '" pattern
-          "'"))
+  (let* ((file-paths (nav-get-non-boring-filenames-recursively "."))
+         (temp-filename (make-temp-file "nav")))
+    (other-window 1)
+    (save-current-buffer
+      (find-file temp-filename)
+      (insert (nav-join "\n" file-paths))
+      (save-buffer))
+    (select-window (nav-get-window nav-buffer-name))
+    (format "cat %s | xargs grep -inH '%s'" temp-filename pattern)))
 
 
 (defun nav-recursive-grep (pattern)
@@ -452,7 +448,7 @@ if the user says it's ok."
 
 (defun nav-find-files (pattern)
   (interactive "sPattern: ")
-  (let* ((filenames (nav-get-non-boring-filenames-recursively))
+  (let* ((filenames (nav-get-non-boring-filenames-recursively "."))
          (names-matching-pattern
           (remove-if-not (lambda (name) (string-match pattern name)) filenames))
          (names-matching-pattern
@@ -537,7 +533,8 @@ or counter-clockwise depending on the passed-in function next-i."
 
 (defun nav-get-paths (dir-path)
   "Recursively finds all paths starting with a given directory name."
-  (let ((paths (list dir-path)))
+  (let* ((dir-path (file-name-as-directory dir-path))
+         (paths (list dir-path)))
     (dolist (file-name (directory-files dir-path))
       (if (not (or (string= "." file-name)
                    (string= ".." file-name)))
