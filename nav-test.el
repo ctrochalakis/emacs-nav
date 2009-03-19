@@ -38,17 +38,17 @@
 
 ;;; Unit tests
 
-(nav-deftest "nav-filter"
-  (nav-assert (equal '() (nav-filter '() 'stringp)))
-  (nav-assert (equal '("a" "b") (nav-filter '("a" "b") 'stringp)))
-  (nav-assert (equal '() (nav-filter '(1) 'stringp))))
-
-
 (nav-deftest "nav-join"
   (nav-assert (string= "" (nav-join "" '())))
   (nav-assert (string= "" (nav-join "--" '())))
   (nav-assert (string= "a" (nav-join "--" '("a"))))
   (nav-assert (string= "aye--bee" (nav-join "--" '("aye" "bee")))))
+
+
+(nav-deftest "nav-filename-matches-some-regexp"
+             (nav-assert (not (nav-filename-matches-some-regexp "b.foo" '())))
+             (nav-assert (not (nav-filename-matches-some-regexp "b.fo" '("\\.foo$"))))
+             (nav-assert (nav-filename-matches-some-regexp "b.foo" '("\\.foo$"))))
 
 
 (nav-deftest "nav-filter-out-boring-filenames"
@@ -82,20 +82,19 @@
 (nav-deftest "nav-window-width"
              (nav)
              (nav-assert (= nav-width (nav-window-width)))
-;             (nav-set-window-width 45)
-;             (nav-assert (= 45 (nav-window-width)))
-             (nav-quit)
-             )
+             (nav-set-window-width 45)
+             (nav-assert (= 45 (nav-window-width)))
+             (nav-quit))
 
 
-;; (nav-deftest "nav-get-working-dir"
-;;              (nav)
-;;              (let ((dir1 (nav-get-working-dir)))
-;;                (nav-push-dir "..")
-;;                (nav-assert (not (string= dir1 (nav-get-working-dir))))
-;;                (nav-pop-dir)
-;;                (nav-assert (string= dir1 (nav-get-working-dir))))
-;;              (nav-quit))
+(nav-deftest "nav-get-working-dir"
+             (nav)
+             (let ((dir1 (nav-get-working-dir)))
+               (nav-push-dir "..")
+               (nav-assert (not (string= dir1 (nav-get-working-dir))))
+               (nav-pop-dir)
+               (nav-assert (string= dir1 (nav-get-working-dir))))
+             (nav-quit))
 
 
 (defun make-test-file (filename contents)

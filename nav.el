@@ -1,8 +1,25 @@
+;;; nav.el --- Emacs mode for IDE-like navigation of directories
+;;
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com
 ;;
-;; GETTING STARTED
+
+;;; License:
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;      http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
+
+;;; Commentary:
+;; 
 ;; To use this file, put something like the following in your
 ;; ~/.emacs:
 ;;
@@ -13,8 +30,8 @@
 ;; 30-character wide column on the left, showing the contents of the
 ;; current directory. If there are multiple windows open, all but one
 ;; will be closed to make sure the nav window shows up correctly.
-;;
-;; KEY BINDINGS
+
+;;; Key Bindings
 ;;   Enter/Return: Open file or directory under cursor
 ;;
 ;;   1: Open file under cursor in 1st other window
@@ -41,25 +58,14 @@
 ;;
 ;;   :: Go into debug mode (should only be needed if you are hacking nav.el)
 ;;
-;; BUGS:
-;; - If you go to a directory, then leave it, then delete it, it still remains in
-;;   the stack, leading to confusion.
-;; - Running the 'g' and 'f' commands doesn't work well in directory
-;;   trees containing filenames with spaces.
-;;
-;; LICENSE
-;; Licensed under the Apache License, Version 2.0 (the "License");
-;; you may not use this file except in compliance with the License.
-;; You may obtain a copy of the License at
-;;
-;;      http://www.apache.org/licenses/LICENSE-2.0
-;;
-;; Unless required by applicable law or agreed to in writing, software
-;; distributed under the License is distributed on an "AS IS" BASIS,
-;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-;; See the License for the specific language governing permissions and
-;; limitations under the License.
 
+;;; History:
+;; See http://code.google.com/p/emacs-nav/source/list
+;;
+
+;;; Code:
+
+(require 'cl)
 
 (defgroup nav nil
   "A lightweight file/directory navigator."
@@ -70,7 +76,8 @@
   :type 'integer
   :group 'nav)
 
-(defcustom nav-boring-file-regexps (list "\\.pyc$" "\\.o$" "~$" "\\.bak$" "^\\." "/\\.")
+(defcustom nav-boring-file-regexps
+  (list "\\.pyc$" "\\.o$" "~$" "\\.bak$" "^\\." "/\\.")
   "*Nav ignores filenames that match any regular expression in this list."
   :type '(repeat string)
   :group 'nav)
@@ -83,14 +90,15 @@ This is used if only one window besides the Nav window is visible."
   :group 'nav)
 
 (defcustom nav-resize-frame-p nil
-  "*If true, activating and deactivating nav will resize the current frame."
+  "*If non-nil, activating and deactivating nav will resize the current frame."
   :type 'boolean
   :group 'nav)
 
 (defvar nav-dir-stack '())
 
 (defconst nav-shell-buffer-name "*nav-shell*"
-  "Name of the buffer used for the command line shell spawned by nav on the 's' key.")
+  "Name of the buffer used for the command line shell spawned by
+  nav on the 's' key.")
 
 (defconst nav-buffer-name "*nav*"
   "Name of the buffer where nav shows directory contents.")
@@ -99,33 +107,27 @@ This is used if only one window besides the Nav window is visible."
   "Name of the buffer where nav shows results of its find command (f key).")
 
 
-(defun nav-filter (ls pred)
-  "Returns a new list containing all elements that satisfy the given predicate."
-  (let ((result '()))
-    (dolist (x ls)
-      (if (funcall pred x)
-          (push x result)))
-    (reverse result)))
-
-
 (defun nav-join (sep string-list)
   (mapconcat 'identity string-list sep))
 
 
+(defun nav-filename-matches-some-regexp (filename regexps)
+  (let ((matches-p nil))
+    (dolist (rx regexps)
+      (if (string-match rx filename)
+          (setq matches-p t)))
+      matches-p))
+
+
 (defun nav-filter-out-boring-filenames (filenames boring-regexps)
-  (let ((result '()))
-    (dolist (filename filenames)
-      (let ((filename-is-boring nil))
-        (dolist (rx boring-regexps)
-          (if (string-match rx filename)
-              (setq filename-is-boring t)))
-        (if (not filename-is-boring)
-            (push filename result))))
-    (reverse result)))
+  (flet ((is-boring (filename)
+                    (nav-filename-matches-some-regexp filename boring-regexps)))
+    (remove-if 'is-boring filenames)))
 
 
 (defun nav-make-pipe-filter-against-boring-files ()
-  (mapconcat (lambda (rx) (concat "grep -v \"" rx "\"")) nav-boring-file-regexps " | "))
+  (mapconcat (lambda (rx) (concat "grep -v \"" rx "\""))
+             nav-boring-file-regexps " | "))
 
 
 (defun nav-make-non-boring-find-command ()
@@ -452,7 +454,7 @@ if the user says it's ok."
   (interactive "sPattern: ")
   (let* ((filenames (nav-get-non-boring-filenames-recursively))
          (names-matching-pattern
-          (nav-filter filenames (lambda (name) (string-match pattern name))))
+          (remove-if-not (lambda (name) (string-match pattern name)) filenames))
          (names-matching-pattern
           (nav-append-slashes-to-dir-names names-matching-pattern)))
     (pop-to-buffer nav-buffer-name-for-find-results nil)
@@ -620,3 +622,7 @@ or counter-clockwise depending on the passed-in function next-i."
 
 
 (provide 'nav)
+
+(provide 'nav)
+
+;;; nav.el ends here
