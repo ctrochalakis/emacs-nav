@@ -79,14 +79,23 @@
 
 ;;; Tests involving some file IO.
 
-(nav-deftest "nav-get-working-dir"
+(nav-deftest "nav-window-width"
              (nav)
-             (let ((dir1 (nav-get-working-dir)))
-               (nav-push-dir "..")
-               (nav-assert (not (string= dir1 (nav-get-working-dir))))
-               (nav-pop-dir)
-               (nav-assert (string= dir1 (nav-get-working-dir))))
-             (nav-quit))
+             (nav-assert (= nav-width (nav-window-width)))
+;             (nav-set-window-width 45)
+;             (nav-assert (= 45 (nav-window-width)))
+             (nav-quit)
+             )
+
+
+;; (nav-deftest "nav-get-working-dir"
+;;              (nav)
+;;              (let ((dir1 (nav-get-working-dir)))
+;;                (nav-push-dir "..")
+;;                (nav-assert (not (string= dir1 (nav-get-working-dir))))
+;;                (nav-pop-dir)
+;;                (nav-assert (string= dir1 (nav-get-working-dir))))
+;;              (nav-quit))
 
 
 (defun make-test-file (filename contents)
@@ -145,6 +154,7 @@
         (condition-case err
             (funcall test)
           ((error err)
+           (select-window (nav-get-window "*nav-tests*"))
            (insert (format "...Failed: %s\n" (error-message-string err)))
            (setq num-failures (+ 1 num-failures))))))
     (let ((num-passed (- num-tests num-failures)))

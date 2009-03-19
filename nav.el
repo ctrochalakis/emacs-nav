@@ -87,6 +87,11 @@ This is used if only one window besides the Nav window is visible."
   :type '(choice (const horizontal) (const vertical))
   :group 'nav)
 
+(defcustom nav-resize-frame-p nil
+  "If true, activating and deactivating nav will resize the current frame."
+  :type 'boolean
+  :group 'nav)
+
 (defvar nav-dir-stack '())
 
 (defconst nav-shell-buffer-name "*nav-shell*"
@@ -305,16 +310,24 @@ and delete files, etc."
     (if (eql nav-split-window-direction 'horizontal)
         (split-window-horizontally)
       (split-window-vertically))
-    (select-window (nav-get-window)))
+    (select-window (nav-get-window nav-buffer-name)))
   (nav-open-file-other-window 2))
 
 
-(defun nav-get-window ()
+(defun nav-get-window (buf-name)
+  "Returns a window whose buffer has a given name."
   (let ((nav-win nil))
     (dolist (w (window-list))
-      (if (string= "*nav*" (buffer-name (window-buffer w)))
+      (if (string= buf-name (buffer-name (window-buffer w)))
           (setq nav-win w)))
     nav-win))
+
+
+(defun nav-window-width ()
+  (let* ((edges (window-edges (nav-get-window nav-buffer-name)))
+         (left (nth 0 edges))
+         (right (nth 2 edges)))
+    (- right left 1)))
 
 
 (defun nav-refresh ()
@@ -337,15 +350,18 @@ and delete files, etc."
 
 (defun nav-quit ()
   (interactive)
-  (let ((window	(get-buffer-window "*nav*")))
-    (if	window
-        (delete-window window)))
+  (let ((window	(get-buffer-window nav-buffer-name)))
+    (when window
+      (when nav-resize-frame-p
+        (set-frame-width (selected-frame) 
+                         (- (frame-width) (nav-window-width))))
+      (delete-window window)))
   (kill-buffer nav-buffer-name))
 
 
 (defun nav-toggle ()
   (interactive)
-  (if (nav-get-window)
+  (if (nav-get-window nav-buffer-name)
       (nav-quit)
     (nav)))
 
@@ -544,6 +560,14 @@ or counter-clockwise depending on the passed-in function next-i."
   (nav-refresh))
 
 
+(defun nav-resize-frame ()
+  "Widens the frame to fit Nav without shrinking the editing space."
+  (set-frame-width (selected-frame) 
+                   (+ (frame-width) (nav-window-width)))
+  ;; set-frame-width resizes the nav window; set it back
+  (nav-set-window-width nav-width))
+
+
 (define-derived-mode nav-mode fundamental-mode 
   "Nav-mode is for IDE-like navigation of directories.
 
@@ -592,7 +616,9 @@ or counter-clockwise depending on the passed-in function next-i."
   (nav-kill-buffer-if-exists nav-buffer-name)
   (pop-to-buffer nav-buffer-name nil)
   (set-window-dedicated-p (selected-window) t)
-  (nav-mode))
+  (nav-mode)
+  (when nav-resize-frame-p
+    (nav-resize-frame)))
 
 
 (provide 'nav)
