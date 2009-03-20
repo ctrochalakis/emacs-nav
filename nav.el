@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com
-;; Version 26
+;; Version 27
 ;;
 
 ;;; License:
@@ -103,8 +103,8 @@ This is used if only one window besides the Nav window is visible."
 (defun nav-make-mode-map ()
   "Creates and returns a mode map with nav's key bindings."
   (let ((keymap (make-sparse-keymap)))
-    (define-key keymap [enter] 'nav-open-file-under-cursor)
-    (define-key keymap [return] 'nav-open-file-under-cursor) ; for Macs
+    (define-key keymap "\n" 'nav-open-file-under-cursor)
+    (define-key keymap "\r" 'nav-open-file-under-cursor)
     (define-key keymap "1" 'nav-open-file-other-window-1)
     (define-key keymap "2" 'nav-open-file-other-window-2)
     (define-key keymap "c" 'nav-copy-file-or-dir)
@@ -130,6 +130,7 @@ This is used if only one window besides the Nav window is visible."
 
 
 (defvar nav-mode-map (nav-make-mode-map))
+(setq nav-mode-map (nav-make-mode-map))
 
 (defvar nav-dir-stack '())
 
@@ -620,7 +621,8 @@ depending on the passed-in function next-i."
   (use-local-map nav-mode-map)
   (turn-on-font-lock)
   (font-lock-add-keywords 'nav-mode '(("^.*/$" . font-lock-type-face)))
-  (nav-refresh))  
+  (setq buffer-read-only t)
+  (nav-refresh))
 
 
 ;; For ELPA, the Emacs Lisp Package Archive
