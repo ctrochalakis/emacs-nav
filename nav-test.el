@@ -105,10 +105,14 @@
     (find-file prev-file)))
 
 
+(defconst nasty-file-path "d1/\"Beautiful Evidence\" by Edward Tufte")
+
+
 (defun set-up ()
   (make-directory "d1/d11/" t)
   (make-directory "d1/d12/" t)
   (make-directory "emptydir/" t)
+  (make-test-file nasty-file-path "Try sparklines today.")
   (make-test-file "d1/a" "things in a")
   (make-test-file "d1/b" "a little bee")
   (make-test-file "d1/b.bak" "a little bee")
@@ -124,7 +128,8 @@
 
 (nav-deftest "getting all paths in a non-empty directory tree"
              (let ((found-paths (nav-get-paths "d1/"))
-                   (expected '("d1/"
+                   (expected `("d1/"
+                               ,nasty-file-path
                                "d1/a"
                                "d1/b"
                                "d1/b.bak"
@@ -141,13 +146,14 @@
 
 (nav-deftest "getting non-boring filenames"
              (let ((found-paths (nav-get-non-boring-filenames-recursively "d1"))
-                   (expected '("d1/a"
+                   (expected `(,nasty-file-path
+                               "d1/a"
                                "d1/b"
                                "d1/d12/c")))
                (nav-assert (equal expected found-paths))))
 
 
-(nav-deftest "nav-get-non-boring-filenames-recursively doesn't return nil when given ."
+(nav-deftest "nav-get-non-boring-filenames-recursively doesn't return nil when given '.'"
              (let ((n (length (nav-get-non-boring-filenames-recursively "."))))
                (nav-assert (> n 0))))
 

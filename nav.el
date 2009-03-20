@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com
-;; Version 23
+;; Version 26
 ;;
 
 ;;; License:
@@ -400,10 +400,10 @@ as f6 to this function."
     (other-window 1)
     (save-current-buffer
       (find-file temp-filename)
-      (insert (nav-join "\n" file-paths))
+      (insert (nav-join "\0" file-paths))
       (save-buffer))
     (select-window (nav-get-window nav-buffer-name))
-    (format "cat %s | xargs grep -inH '%s'" temp-filename pattern)))
+    (format "cat %s | xargs -0 grep -inH '%s'" temp-filename pattern)))
 
 
 (defun nav-recursive-grep (pattern)
