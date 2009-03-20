@@ -183,6 +183,7 @@ If DIRNAME is not a directory or is not accessible, returns nil."
 
 
 (defun nav-open-file (filename)
+  "Opens a file or directory from Nav."
   (interactive "FFilename:")
   (if (file-directory-p filename)
       (nav-push-dir filename)
@@ -191,12 +192,14 @@ If DIRNAME is not a directory or is not accessible, returns nil."
 
 
 (defun nav-open-file-under-cursor ()
+  "Finds the file undert the cursor in the window not containing Nav."
   (interactive)
   (let ((filename (nav-get-cur-line-str)))
     (nav-open-file filename)))
 
 
 (defun nav-go-up-one-dir ()
+  "Points Nav to ../."
   (interactive)
   (nav-push-dir ".."))
 
@@ -207,6 +210,8 @@ If DIRNAME is not a directory or is not accessible, returns nil."
 
 
 (defun nav-pop-dir ()
+  "Goes to the previous directory in Nav's history.
+This works like a web browser's back button."
   (interactive)
   (let ((dir (or (pop nav-dir-stack) ".")))
     (nav-cd dir)))
@@ -314,11 +319,16 @@ and delete files, etc."
 
 
 (defun nav-open-file-other-window-1 ()
+  "Opens the file under the cursor in the first other window.
+This is equivalent to just pressing the [enter] key. 
+See nav-open-file-other-window-2."
   (interactive)
   (nav-open-file-other-window 1))
 
 
 (defun nav-open-file-other-window-2 ()
+  "Opens the file under the cursor in the second other window.
+If there is no second other window, Nav will create one."
   (interactive)
   (when (= 2 (length (window-list)))
     (other-window 1)
@@ -346,6 +356,7 @@ and delete files, etc."
 
 
 (defun nav-refresh ()
+  "Resizes the Nav window to its original size and updates its contents."
   (interactive)
   (nav-set-window-width nav-width)
   (nav-show-dir "."))
@@ -396,12 +407,14 @@ as f6 to this function."
 
 
 (defun nav-recursive-grep (pattern)
+  "Greps for a regular expression in '.' and all subdirectories."
   (interactive "sPattern to recursively grep for: ")
   (grep (nav-make-recursive-grep-command pattern))
   (other-window 1))
 
 
 (defun nav-jump-to-dir (dirname)
+  "Shows a specified directory in Nav."
   (interactive "fDirectory: ")
   (nav-push-dir dirname))
 
@@ -418,6 +431,7 @@ as f6 to this function."
 
 
 (defun nav-delete-file-or-dir ()
+  "Deletes a file or directory."
   (interactive)
   (let ((filename (nav-get-cur-line-str)))
     (if (file-directory-p filename)
@@ -432,14 +446,16 @@ as f6 to this function."
 
 
 (defun nav-ok-to-overwrite (target-name)
-  "Returns true if the target doesn't exist, is a directory, or
-if the user says it's ok."
+  "Returns non-nil if it's ok to overwrite or create a file.
+That is, if a file with the given name doesn't exist, is a
+directory, or if the user says it's ok."
   (or (not (file-exists-p target-name))
       (file-directory-p target-name)
       (y-or-n-p (format "Really overwrite %s ? " target-name))))
 
 
 (defun nav-copy-file-or-dir (target-name)
+  "Copies a file or directory."
   (interactive "sCopy to: ")
   (let ((filename (nav-get-cur-line-str)))
     (if (nav-this-is-a-microsoft-os)
@@ -452,6 +468,7 @@ if the user says it's ok."
 
 
 (defun nav-move-file (new-name)
+  "Moves a file."
   (interactive "sNew name or directory: ")
   (let ((old-name (nav-get-cur-line-str)))
     (if (nav-this-is-a-microsoft-os)
@@ -476,6 +493,7 @@ if the user says it's ok."
 
 
 (defun nav-find-files (pattern)
+  "Finds files whose names match a regular expression, in '.' and all subdirs."
   (interactive "sPattern: ")
   (let* ((filenames (nav-get-non-boring-filenames-recursively "."))
          (names-matching-pattern
@@ -500,6 +518,7 @@ if the user says it's ok."
 
 
 (defun nav-make-new-directory (name)
+  "Creates a new directory."
   (interactive "sMake directory: ")
   (make-directory name)
   (nav-refresh))
@@ -548,8 +567,9 @@ if the user says it's ok."
 
 
 (defun nav-rotate-windows (next-i)
-  "Cyclically permutes the windows other than the nav window, either clockwise
-or counter-clockwise depending on the passed-in function next-i."
+  "Cyclically permutes the windows other than the nav window.
+The permutation is either clockwise or counter-clockwise
+depending on the passed-in function next-i."
   (let* ((win-list (nav-get-other-windows))
          (win-vec (apply 'vector win-list))
          (buf-list (mapcar 'window-buffer win-list))
@@ -566,9 +586,10 @@ or counter-clockwise depending on the passed-in function next-i."
          (paths (list dir-path)))
     (dolist (file-name (directory-files dir-path))
       (when (not (or (string= "." file-name)
-                   (string= ".." file-name)))
+                     (string= ".." file-name)))
             (let ((file-path (format "%s%s" dir-path file-name)))
-              (if (file-directory-p file-path)
+              (if (and (file-directory-p file-path)
+                       (not (file-symlink-p file-path)))
                   (let ((more-paths (nav-get-paths (format "%s/" file-path))))
                     (setq paths (append (reverse more-paths) paths)))
                 (push file-path paths)))))
@@ -576,6 +597,7 @@ or counter-clockwise depending on the passed-in function next-i."
 
 
 (defun nav-shell-command (command)
+  "Runs a shell command and then refreshes the Nav window."
   (interactive "sShell command: ")
   (shell-command command)
   (nav-refresh))
