@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com
-;; Version 27
+;; Version 28
 ;;
 
 ;;; License:
@@ -130,7 +130,6 @@ This is used if only one window besides the Nav window is visible."
 
 
 (defvar nav-mode-map (nav-make-mode-map))
-(setq nav-mode-map (nav-make-mode-map))
 
 (defvar nav-dir-stack '())
 
@@ -528,8 +527,9 @@ directory, or if the user says it's ok."
 (defun nav-shell ()
   "Starts up a shell on the current nav directory."
   (interactive)
-  (ignore-errors (kill-buffer nav-shell-buffer-name)) 
-  (shell nav-shell-buffer-name))
+  (shell nav-shell-buffer-name)
+  (process-send-string (get-buffer-process nav-shell-buffer-name)
+                       (format "cd '%s'\n" (nav-get-working-dir))))
 
 
 (defun nav-term ()
