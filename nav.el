@@ -71,6 +71,7 @@
 
 (require 'cl)
 
+
 (defgroup nav nil
   "A lightweight file/directory navigator."
   :group 'applications)
@@ -166,29 +167,23 @@ This is used if only one window besides the Nav window is visible."
     (nav-filter-out-boring-filenames paths (cons "/$" nav-boring-file-regexps))))
 
 
-(defun nav-kill-buffer-if-exists (bufname)
-  (condition-case err
-      (kill-buffer bufname)
-    (error nil)))
-
-
 (defun nav-dir-files-or-nil (dirname)
-  "Returns a list of files in a directory, or nil if it is not a
-directory or is not accessible."
+  "Returns a list of files in DIRNAME. 
+If DIRNAME is not a directory or is not accessible, returns nil."
   (condition-case err
       (directory-files dirname)
     (file-error nil)))
 
 
-;; Changes to a different directory and pushes it onto the stack.
 (defun nav-cd (dirname)
+  "Changes to a different directory and pushes it onto the stack."
   (let ((dirname (file-name-as-directory (file-truename dirname))))
     (setq default-directory dirname)
     (nav-show-dir dirname)))
 
 
 (defun nav-open-file (filename)
-  (interactive "sFilename:")
+  (interactive "FFilename:")
   (if (file-directory-p filename)
       (nav-push-dir filename)
     (if (file-exists-p filename)
@@ -197,7 +192,7 @@ directory or is not accessible."
 
 (defun nav-open-file-under-cursor ()
   (interactive)
-  (let ((filename (get-cur-line-str)))
+  (let ((filename (nav-get-cur-line-str)))
     (nav-open-file filename)))
 
 
@@ -217,7 +212,7 @@ directory or is not accessible."
     (nav-cd dir)))
 
 
-(defun get-cur-line-str ()
+(defun nav-get-cur-line-str ()
   (buffer-substring-no-properties (point-at-bol)
                                   (point-at-eol)))
 
@@ -238,14 +233,15 @@ directory or is not accessible."
 
 
 (defun nav-replace-buffer-contents (new-contents should-make-filenames-clickable)
-  (let ((saved-line-number (nav-line-number-at-pos (point))))
-    (setq buffer-read-only nil)
+  (let ((saved-line-number (nav-line-number-at-pos (point)))
+        ;; Setting inhibit-read-only to t here lets us edit the buffer
+        ;; in this let-block.
+        (inhibit-read-only t))
     (erase-buffer)
     (insert new-contents)
     (font-lock-fontify-buffer)
     (if should-make-filenames-clickable
         (nav-make-filenames-clickable))
-    (setq buffer-read-only t)
     (goto-line saved-line-number)))
 
 
@@ -311,7 +307,7 @@ and delete files, etc."
 
 
 (defun nav-open-file-other-window (k)
-  (let ((filename (get-cur-line-str))
+  (let ((filename (nav-get-cur-line-str))
         (dirname (nav-get-working-dir)))
     (other-window k)
     (find-file (concat dirname "/" filename))))
@@ -423,7 +419,7 @@ as f6 to this function."
 
 (defun nav-delete-file-or-dir ()
   (interactive)
-  (let ((filename (get-cur-line-str)))
+  (let ((filename (nav-get-cur-line-str)))
     (if (file-directory-p filename)
         (if (yes-or-no-p (format "Really delete directory %s ?" filename))
             (progn
@@ -445,7 +441,7 @@ if the user says it's ok."
 
 (defun nav-copy-file-or-dir (target-name)
   (interactive "sCopy to: ")
-  (let ((filename (get-cur-line-str)))
+  (let ((filename (nav-get-cur-line-str)))
     (if (nav-this-is-a-microsoft-os)
 	(copy-file filename target-name)
       (if (nav-ok-to-overwrite target-name)
@@ -457,7 +453,7 @@ if the user says it's ok."
 
 (defun nav-move-file (new-name)
   (interactive "sNew name or directory: ")
-  (let ((old-name (get-cur-line-str)))
+  (let ((old-name (nav-get-cur-line-str)))
     (if (nav-this-is-a-microsoft-os)
 	(rename-file old-name new-name)
       (if (nav-ok-to-overwrite new-name)
@@ -512,7 +508,7 @@ if the user says it's ok."
 (defun nav-shell ()
   "Starts up a shell on the current nav directory."
   (interactive)
-  (nav-kill-buffer-if-exists nav-shell-buffer-name)
+  (ignore-errors (kill-buffer nav-shell-buffer-name)) 
   (shell nav-shell-buffer-name))
 
 
@@ -613,7 +609,7 @@ or counter-clockwise depending on the passed-in function next-i."
   (delete-other-windows)
   (split-window-horizontally)
   (other-window 1)
-  (nav-kill-buffer-if-exists nav-buffer-name)
+  (ignore-errors (kill-buffer nav-buffer-name))
   (pop-to-buffer nav-buffer-name nil)
   (set-window-dedicated-p (selected-window) t)
   (nav-mode)
