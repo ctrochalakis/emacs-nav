@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com
-;; Version 28
+;; Version 29
 ;;
 
 ;;; License:
@@ -528,8 +528,11 @@ directory, or if the user says it's ok."
   "Starts up a shell on the current nav directory."
   (interactive)
   (shell nav-shell-buffer-name)
+  ;; Tell the shell to cd to the working directory of nav.
   (process-send-string (get-buffer-process nav-shell-buffer-name)
-                       (format "cd '%s'\n" (nav-get-working-dir))))
+                       (format "cd '%s'\n" (nav-get-working-dir)))
+  ;; Make sure the shell knows to do completion in the new directory.
+  (shell-process-cd (nav-get-working-dir)))
 
 
 (defun nav-term ()
