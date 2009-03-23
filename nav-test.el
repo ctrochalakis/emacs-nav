@@ -77,22 +77,6 @@
                        (nav-make-grep-list-cmd "pat" '("file1" "file2")))))
 
 
-(nav-deftest "nav-subdirectory-p"
-             (nav-assert (nav-subdirectory-p "/" "/"))
-             (nav-assert (nav-subdirectory-p "/a/" "/"))
-             (nav-assert (not (nav-subdirectory-p "/" "/a/")))
-             (nav-assert (nav-subdirectory-p "/a/" "/a/"))
-             (nav-assert (not (nav-subdirectory-p "/a/" "/b/")))
-             (nav-assert (nav-subdirectory-p "/a/b/" "/a/")))
-
-
-(nav-deftest "nav-uniq"
-             (nav-assert (equal '() (nav-uniq '())))
-             (nav-assert (equal '(1) (nav-uniq '(1))))
-             (nav-assert (equal '(1) (nav-uniq '(1 1))))
-             (nav-assert (equal '(1 2 3) (nav-uniq '(1 2 2 3 3 3 3)))))
-
-
 ;;; Tests involving some file IO.
 
 (nav-deftest "nav-outer-width"
