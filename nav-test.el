@@ -36,7 +36,7 @@
          nav-test-functions))
 
 
-;;; Unit tests
+;;; Small tests
 
 (nav-deftest "nav-join"
   (nav-assert (string= "" (nav-join "" '())))
@@ -77,7 +77,15 @@
                        (nav-make-grep-list-cmd "pat" '("file1" "file2")))))
 
 
-;;; Tests involving some file IO.
+;;; Medium tests
+
+(nav-deftest "using M-x nav to toggle nav"
+             (nav-assert (not (nav-is-open)))
+             (nav)
+             (nav-assert (nav-is-open))
+             (nav)
+             (nav-assert (not (nav-is-open))))
+
 
 (nav-deftest "nav-outer-width"
              (nav)

@@ -2,8 +2,8 @@
 ;;
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
-;; Author: issactrotts@google.com
-;; Version 31
+;; Author: issactrotts@google.com (Issac Trotts)
+;; Version 32
 ;;
 
 ;;; License:
@@ -391,13 +391,16 @@ If there is no second other window, Nav will create one."
   (kill-buffer nav-buffer-name))
 
 
+(defun nav-is-open ()
+  "Returns non-nil if Nav is open."
+  (nav-get-window nav-buffer-name))
+
+
 (defun nav-toggle ()
-  "Toggles whether Nav is active. It is useful to bind a key such
-as f6 to this function."
+  "Toggles whether Nav is active.
+Synonymous with the (nav) function."
   (interactive)
-  (if (nav-get-window nav-buffer-name)
-      (nav-quit)
-    (nav)))
+  (nav))
 
 
 (defun nav-make-recursive-grep-command (pattern)
@@ -637,15 +640,17 @@ depending on the passed-in function next-i."
 (defun nav ()
   "Run nav-mode in a narrow window on the left side."
   (interactive)
-  (delete-other-windows)
-  (split-window-horizontally)
-  (other-window 1)
-  (ignore-errors (kill-buffer nav-buffer-name))
-  (pop-to-buffer nav-buffer-name nil)
-  (set-window-dedicated-p (selected-window) t)
-  (nav-mode)
-  (when nav-resize-frame-p
-    (nav-resize-frame)))
+  (if (nav-is-open)
+      (nav-quit)
+    (delete-other-windows)
+    (split-window-horizontally)
+    (other-window 1)
+    (ignore-errors (kill-buffer nav-buffer-name))
+    (pop-to-buffer nav-buffer-name nil)
+    (set-window-dedicated-p (selected-window) t)
+    (nav-mode)
+    (when nav-resize-frame-p
+      (nav-resize-frame))))
 
 
 (provide 'nav)
