@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com
-;; Version 29
+;; Version 30
 ;;
 
 ;;; License:
@@ -142,6 +142,10 @@ This is used if only one window besides the Nav window is visible."
 
 (defconst nav-buffer-name-for-find-results "*nav-find*"
   "Name of the buffer where nav shows results of its find command ('f' key).")
+
+
+(defun nav-subdirectory-p (maybe-subdir dir)
+  (string-match (format "^%s" dir) maybe-subdir))
 
 
 (defun nav-join (sep string-list)
@@ -430,19 +434,39 @@ as f6 to this function."
     (format "rm -rf '%s'" dirname)))
 
 
+(defun nav-remove-subdirs-from-list (dir dir-paths-list)
+  "Returns DIR-PATHS-LIST with all subdirs of DIR removed."
+  (let* ((dir-path (file-truename (file-name-as-directory dir)))
+         (dir-paths-list (remove-if (lambda (stack-item)
+                                      (nav-subdirectory-p stack-item dir-path))
+                                    dir-paths-list)))
+    (nav-uniq dir-paths-list)))
+
+
+(defun nav-uniq (ls)
+  "Works like unix's uniq command, non-destructively."
+  (let ((result '())
+        (prev nil))
+    (dolist (x ls)
+      (when (not (equal x prev))
+        (push x result)
+        (setq prev x)))
+    (reverse result)))
+
+
 (defun nav-delete-file-or-dir ()
   "Deletes a file or directory."
   (interactive)
   (let ((filename (nav-get-cur-line-str)))
     (if (file-directory-p filename)
-        (if (yes-or-no-p (format "Really delete directory %s ?" filename))
-            (progn
+        (when (yes-or-no-p (format "Really delete directory %s ?" filename))
 	      (shell-command (nav-make-remove-dir-command filename))
-              (nav-refresh)))
-      (if (y-or-n-p (format "Really delete file %s ? " filename))
-          (progn
+              (setq nav-dir-stack (nav-remove-subdirs-from-list
+                                   filename nav-dir-stack))
+              (nav-refresh))
+      (when (y-or-n-p (format "Really delete file %s ? " filename))
             (delete-file filename)
-            (nav-refresh))))))
+            (nav-refresh)))))
 
 
 (defun nav-ok-to-overwrite (target-name)
