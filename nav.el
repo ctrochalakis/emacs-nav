@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com (Issac Trotts)
-;; Version 32
+;; Version 34
 ;;
 
 ;;; License:
@@ -130,11 +130,14 @@ This is used if only one window besides the Nav window is visible."
 
 
 ;; I use setq instead of defvar here so we can just use M-x
-;; eval-buffer instead of restarting emacs or other junk
-;; after changing the nav mode map.
+;; eval-buffer instead of restarting emacs or other junk after
+;; changing the nav mode map.
 (setq nav-mode-map (nav-make-mode-map))
 
 (defvar nav-dir-stack '())
+
+(defvar nav-map-dir-to-line-number (make-hash-table :test 'equal)
+  "Hash table from dir paths to most recent cursor pos in them.")
 
 (defconst nav-shell-buffer-name "*nav-shell*"
   "Name of the buffer used for the command line shell spawned by
@@ -178,11 +181,24 @@ If DIRNAME is not a directory or is not accessible, returns nil."
     (file-error nil)))
 
 
+(defun nav-get-line-for-cur-dir ()
+  (gethash (nav-get-working-dir) nav-map-dir-to-line-number))
+
+
 (defun nav-cd (dirname)
   "Changes to a different directory and pushes it onto the stack."
   (let ((dirname (file-name-as-directory (file-truename dirname))))
+    ;; Update line number hash table.
+    (let ((line-num (nav-line-number-at-pos (point))))
+      (puthash (nav-get-working-dir) line-num nav-map-dir-to-line-number))
+
     (setq default-directory dirname)
-    (nav-show-dir dirname)))
+    (nav-show-dir dirname)
+    
+    ;; Remember what line we were on last time we visited this directory.
+    (let ((line-num (nav-get-line-for-cur-dir)))
+      (when line-num
+        (goto-line line-num)))))
 
 
 (defun nav-open-file (filename)
