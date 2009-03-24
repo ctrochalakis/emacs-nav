@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com (Issac Trotts)
-;; Version: 35
+;; Version: 36
 ;;
 
 ;;; License:
@@ -466,6 +466,7 @@ Synonymous with the (nav) function."
 
 (defun nav-ok-to-overwrite (target-name)
   "Returns non-nil if it's ok to overwrite or create a file.
+
 That is, if a file with the given name doesn't exist, is a
 directory, or if the user says it's ok."
   (or (not (file-exists-p target-name))
@@ -488,7 +489,7 @@ directory, or if the user says it's ok."
 
 (defun nav-move-file (new-name)
   "Moves a file."
-  (interactive "sNew name or directory: ")
+  (interactive "FNew name or directory: ")
   (let ((old-name (nav-get-cur-line-str)))
     (if (nav-this-is-a-microsoft-os)
 	(rename-file old-name new-name)
@@ -592,6 +593,7 @@ If there is already a *terminal* buffer then it is reused."
 
 (defun nav-rotate-windows (next-i)
   "Cyclically permutes the windows other than the nav window.
+
 The permutation is either clockwise or counter-clockwise
 depending on the passed-in function next-i."
   (let* ((win-list (nav-get-other-windows))
