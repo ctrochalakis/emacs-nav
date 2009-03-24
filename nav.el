@@ -108,7 +108,7 @@ This is used if only one window besides the Nav window is visible."
     (define-key keymap "1" 'nav-open-file-other-window-1)
     (define-key keymap "2" 'nav-open-file-other-window-2)
     (define-key keymap "c" 'nav-copy-file-or-dir)
-    (define-key keymap "d" 'nav-delete-file-or-dir)
+    (define-key keymap "d" 'nav-delete-file-or-dir-on-this-line)
     (define-key keymap "e" 'nav-invoke-dired)
     (define-key keymap "f" 'nav-find-files)
     (define-key keymap "g" 'nav-recursive-grep)
@@ -129,7 +129,10 @@ This is used if only one window besides the Nav window is visible."
     keymap))
 
 
-(defvar nav-mode-map (nav-make-mode-map))
+;; I use setq instead of defvar here so we can just use M-x
+;; eval-buffer instead of restarting emacs or other junk
+;; after changing the nav mode map.
+(setq nav-mode-map (nav-make-mode-map))
 
 (defvar nav-dir-stack '())
 
@@ -439,17 +442,24 @@ Synonymous with the (nav) function."
     (format "rm -rf '%s'" dirname)))
 
 
-(defun nav-delete-file-or-dir ()
+(defun nav-delete-file-or-dir (filename)
+  (if (and (file-directory-p filename)
+           (not (file-symlink-p (directory-file-name filename))))
+      (when (yes-or-no-p (format "Really delete directory %s ?" filename))
+        (shell-command (nav-make-remove-dir-command filename))
+        (nav-refresh))
+      ;; We first use directory-file-name to strip the trailing slash
+      ;; if it's a symlink to a directory.
+      (let ((filename (directory-file-name filename)))
+        (when (y-or-n-p (format "Really delete file %s ? " filename))
+          (delete-file filename)
+          (nav-refresh)))))
+
+
+(defun nav-delete-file-or-dir-on-this-line ()
   "Deletes a file or directory."
   (interactive)
-  (let ((filename (nav-get-cur-line-str)))
-    (if (file-directory-p filename)
-        (when (yes-or-no-p (format "Really delete directory %s ?" filename))
-	      (shell-command (nav-make-remove-dir-command filename))
-              (nav-refresh))
-      (when (y-or-n-p (format "Really delete file %s ? " filename))
-            (delete-file filename)
-            (nav-refresh)))))
+  (nav-delete-file-or-dir (nav-get-cur-line-str)))
 
 
 (defun nav-ok-to-overwrite (target-name)
