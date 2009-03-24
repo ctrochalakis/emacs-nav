@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com (Issac Trotts)
-;; Version 34
+;; Version: 35
 ;;
 
 ;;; License:
@@ -58,8 +58,6 @@
 ;;   !: Run shell command.
 ;;   [: Rotate non-nav windows counter clockwise.
 ;;   ]: Rotate non-nav windows clockwise.
-;;
-;;   :: Go into debug mode (should only be needed if you are hacking nav.el).
 ;;
 
 ;;; History:
@@ -329,8 +327,7 @@ This works like a web browser's back button."
 
 
 (defun nav-invoke-dired ()
-  "Invokes dired on the current directory so the user can rename
-and delete files, etc."
+  "Invokes dired on the current directory."
   (interactive)
   (other-window 1)
   (dired (nav-get-working-dir)))
@@ -387,19 +384,8 @@ If there is no second other window, Nav will create one."
   (nav-show-dir "."))
 
 
-(defun nav-turn-off-keys-and-be-writable ()
-  (interactive)
-  (use-local-map (make-sparse-keymap))
-  (setq buffer-read-only nil))
-
-
-(defun nav-turn-on-keys-and-be-read-only ()
-  (interactive)
-  (use-local-map (nav-make-key-bindings))
-  (setq buffer-read-only t))
-
-
 (defun nav-quit ()
+  "Exits Nav."
   (interactive)
   (let ((window	(get-buffer-window nav-buffer-name)))
     (when window
@@ -569,8 +555,9 @@ directory, or if the user says it's ok."
 
 
 (defun nav-term ()
-  "Starts up a term on the current nav directory, unless there is already a
-*terminal* buffer in which case it is reused."
+  "Starts up a term on the current nav directory.
+
+If there is already a *terminal* buffer then it is reused."
   (interactive)
   (let ((nav-temp-file "*nav-temp*"))
     (find-file-other-window nav-temp-file)
