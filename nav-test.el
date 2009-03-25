@@ -127,7 +127,6 @@
   (make-test-file "d1/d12/c" "let me see"))
 
 
-(set-up)
 (nav-deftest "getting all paths in an empty directory tree"
              (let ((found-paths (nav-get-paths "emptydir"))
                    (expected (list "emptydir/")))
