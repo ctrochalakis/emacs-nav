@@ -3,7 +3,7 @@
 ;; Copyright 2009 Google Inc. All Rights Reserved.
 ;;
 ;; Author: issactrotts@google.com (Issac Trotts)
-;; Version: 36
+;; Version: 37
 ;;
 
 ;;; License:
@@ -491,10 +491,7 @@ directory, or if the user says it's ok."
   "Moves a file."
   (interactive "FNew name or directory: ")
   (let ((old-name (nav-get-cur-line-str)))
-    (if (nav-this-is-a-microsoft-os)
-	(rename-file old-name new-name)
-      (if (nav-ok-to-overwrite new-name)
-	  (shell-command (format "mv %s %s" old-name new-name)))))
+    (rename-file old-name new-name))
   (nav-refresh))
 
 
